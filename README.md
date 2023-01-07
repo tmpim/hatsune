@@ -5,11 +5,14 @@ computercraft i/o library for people who like vocaloid
 (also it's cute like miku)
 
 ## what's in the box?
- - `hatsune` - cute event loop and coroutine scheduler
- - `miku` - future/promise implementation
- - `async` - create a miku from a yielding/awaiting function, instead of using miku callbacks
- - `await` - await a miku, also available as `miku:await`
- - `awaitSafe` - await a miku, catching errors and returning `boolean, result`, also available as `miku:awaitSafe`
+  - `hatsune` - cute event loop and coroutine scheduler
+  - `miku` - future/promise implementation
+  - `async` - create a miku from a yielding/awaiting function, instead of using miku callbacks
+  - `await` - await a miku, also available as `miku:await`
+  - `awaitSafe` - await a miku, catching errors and returning `boolean, result`, also available as `miku:awaitSafe`
+
+hatsune also provides a few optional modules:
+  - `rin` - async http library
 
 ## examples
 
@@ -17,15 +20,17 @@ computercraft i/o library for people who like vocaloid
 
 the preferable language for hatsune is moonscript, since it allows for much more concise code. here are some examples:
 
- - [hatsune](./examples/moonscript/hatsune.moon)
- - [miku](./examples/moonscript/miku.moon)
+  - [hatsune](./examples/moonscript/hatsune.moon)
+  - [miku](./examples/moonscript/miku.moon)
+  - [rin](./examples/moonscript/rin.moon)
 
 ### [lua](./examples/lua)
 
 as a lua library, hatsune is a bit more verbose (but still easy to use!). here are some examples:
 
- - [hatsune](./examples/lua/hatsune.lua)
- - [miku](./examples/lua/miku.lua)
+  - [hatsune](./examples/lua/hatsune.lua)
+  - [miku](./examples/lua/miku.lua)
+  - [rin](./examples/lua/rin.lua)
 
 ## installation
 
@@ -47,7 +52,6 @@ moonc .
 ```
 
 ## todo
- - http library
- - websocket library
- - krist library
- - more examples
+  - websocket library
+  - krist library
+  - more examples
