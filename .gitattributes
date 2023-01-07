@@ -1,1 +1,3 @@
-./hatsune.lua linguist-generated=true
+hatsune.lua linguist-generated=true
+examples/run.lua linguist-generated=true
+examples/lua/*.lua linguist-documentation=true
