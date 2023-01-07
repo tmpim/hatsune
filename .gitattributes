@@ -1,3 +1,4 @@
 hatsune.lua linguist-generated=true
-examples/run.lua linguist-generated=true
+modules/*.lua linguist-generated=true
+examples/run.lua linguist-documentation=true
 examples/lua/*.lua linguist-documentation=true
