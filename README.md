@@ -37,10 +37,13 @@ wget https://github.com/tmpim/hatsune/raw/main/hatsune.lua
 
 ## building
 
-to build the library, [moonscript-cc](https://github.com/emmachase/moonscript-cc) to build the library in-game, or use the standard [moonscript](https://moonscript.org/) compiler to build it on your computer. once you have either of those, run the following command:
+you can build hatsune from source using [moonscript](https://moonscript.org/) externally, or using [moonscript-cc](https://github.com/emmachase/moonscript-cc) in computercraft.
 
 ```
-moonc hatsune.moon
+# if you're in computercraft (thanks to emma)
+wget https://github.com/emmachase/moonscript-cc/raw/main/build/moonc.lua
+
+moonc .
 ```
 
 ## todo
