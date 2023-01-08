@@ -1,5 +1,6 @@
 local hatsuneModule = require("hatsune")
-local await, async, hatsune, miku, awaitSafe = hatsuneModule.await, hatsuneModule.async, hatsuneModule.hatsune, hatsuneModule.miku, hatsuneModule.awaitSafe
+local await, async, hatsune, miku  = hatsuneModule.await, hatsuneModule.async, hatsuneModule.hatsune, hatsuneModule.miku
+local awaitSafe, throw = hatsuneModule.awaitSafe, hatsuneModule.throw
 
 local scheduler = hatsune()
 
@@ -18,7 +19,7 @@ local getMiku = function(value)
 end
 
 local reject = async(function()
-  error("rejected")
+  throw("rejected")
 end)
 
 -- longer form of the above

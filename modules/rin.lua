@@ -1,6 +1,10 @@
-local miku
-miku = require("hatsune").miku
-local version = "0.0.0"
+local miku, throw, exception
+do
+  local _obj_0 = require("hatsune")
+  miku, throw, exception = _obj_0.miku, _obj_0.throw, _obj_0.exception
+end
+local KagamineException = exception("KagamineException")
+local version = "0.0.1"
 local kagamine
 do
   local _class_0
@@ -8,7 +12,7 @@ do
     used = false,
     _checkUsed = function(self)
       if self.used then
-        return error("Response already used")
+        return throw(KagamineException("Response already used"))
       end
     end,
     read = function(self, ...)
@@ -52,8 +56,8 @@ do
   }
   _base_0.__index = _base_0
   _class_0 = setmetatable({
-    __init = function(self, url, status, statusText, headers, body, err)
-      self.url, self.status, self.statusText, self.headers, self.body, self.err = url, status, statusText, headers, body, err
+    __init = function(self, url, status, statusText, headers, body, error)
+      self.url, self.status, self.statusText, self.headers, self.body, self.error = url, status, statusText, headers, body, error
     end,
     __base = _base_0,
     __name = "kagamine"
@@ -111,5 +115,6 @@ end
 return {
   kagamine = kagamine,
   rin = rin,
+  KagamineException = KagamineException,
   version = version
 }

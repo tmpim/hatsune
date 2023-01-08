@@ -1,4 +1,4 @@
-import await, async, hatsune, miku, awaitSafe from require "hatsune"
+import await, async, hatsune, miku, awaitSafe, throw from require "hatsune"
 
 scheduler = hatsune!
 
@@ -14,7 +14,7 @@ getMiku = (value) ->
     resolve value
 
 reject = async ->
-  error "rejected"
+  throw "rejected"
 
 -- longer form of the above
 rejectMiku = ->

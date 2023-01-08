@@ -1,4 +1,4 @@
-local version = "0.0.0"
+local version = "0.1.0"
 local logger = print
 local log
 log = function(msg)
@@ -7,6 +7,49 @@ end
 local setLogger
 setLogger = function(fn)
   logger = fn
+end
+local indent
+indent = function(level, str)
+  return (" "):rep(level) .. str
+end
+local pretty
+pretty = function(value, level)
+  if level == nil then
+    level = 0
+  end
+  if type(value) == "table" then
+    if value.vararg then
+      return table.concat((function()
+        local _accum_0 = { }
+        local _len_0 = 1
+        for _index_0 = 1, #value do
+          local v = value[_index_0]
+          _accum_0[_len_0] = pretty(v)
+          _len_0 = _len_0 + 1
+        end
+        return _accum_0
+      end)(), ", ")
+    end
+    if getmetatable(value) and getmetatable(value).__tostring then
+      return "[" .. tostring(value) .. "]"
+    end
+    local body = table.concat((function()
+      local _accum_0 = { }
+      local _len_0 = 1
+      for k, v in pairs(value) do
+        _accum_0[_len_0] = indent(level + 1, tostring(pretty(k, level + 1)) .. ": " .. tostring(pretty(v, level + 1)))
+        _len_0 = _len_0 + 1
+      end
+      return _accum_0
+    end)(), ",\n")
+    return indent(level, "{") .. "\n" .. tostring(body) .. "\n" .. indent(level, "}")
+  elseif type(value) == "function" then
+    return "[" .. tostring(value) .. "]"
+  elseif type(value) == "string" then
+    return "\"" .. tostring(value) .. "\""
+  else
+    return tostring(value)
+  end
 end
 local hatsune
 do
@@ -44,7 +87,7 @@ do
       if coroutine.status(process.thread) == "suspended" then
         local _, msg, err = coroutine.resume(process.thread, ...)
         if msg == "aaaaa" then
-          error(tostring(process.name) .. " died with an unhandled error:\n" .. tostring(err))
+          error(tostring(process.name) .. " died with an unhandled error:\n" .. tostring(pretty(err)))
         end
       end
       if coroutine.status(process.thread) == "dead" then
@@ -72,9 +115,7 @@ do
     end,
     interval = function(self, interval, fn, ...)
       local timer = os.startTimer(interval)
-      local args = {
-        ...
-      }
+      local args = table.pack(...)
       return self:onNamed("interval " .. tostring(interval), "timer", function(event, id)
         if id == timer then
           fn(table.unpack(args))
@@ -84,9 +125,7 @@ do
     end,
     timeout = function(self, timeout, fn, ...)
       local timer = os.startTimer(timeout)
-      local args = {
-        ...
-      }
+      local args = table.pack(...)
       return self:onNamed("timeout " .. tostring(timeout), "timer", function(event, id)
         if id == timer then
           return fn(table.unpack(args))
@@ -95,7 +134,7 @@ do
     end,
     schedule = function(self, name, fn, ...)
       local thread = coroutine.create(function(...)
-        local ok, err = xpcall(fn, debug.traceback, ...)
+        local ok, err = pcall(fn, ...)
         if not ok then
           return coroutine.yield("aaaaa", err)
         end
@@ -144,7 +183,7 @@ do
   _base_0.__class = _class_0
   hatsune = _class_0
 end
-local await, async, miku, awaitSafe
+local await, async, miku, awaitSafe, throw
 do
   local _class_0
   local _base_0 = {
@@ -166,7 +205,11 @@ do
         end
       end)())
       if not ok then
-        return self:_reject(err)
+        if type(err) == "table" and err.vararg then
+          return self:_reject(table.unpack(err))
+        else
+          return self:_reject(err)
+        end
       end
     end,
     _fulfill = function(self, value, error)
@@ -175,20 +218,24 @@ do
       self.fulfilled = true
       return os.queueEvent("miku", self)
     end,
-    _resolve = function(self, value)
+    _resolve = function(self, ...)
+      local value = table.pack(...)
       return self:_fulfill(value, nil)
     end,
-    _reject = function(self, error)
+    _reject = function(self, ...)
+      local error = table.pack(...)
       return self:_fulfill(nil, error)
     end,
     done = function(self, resolved, rejected)
       local first = self
       return miku(function(resolve, reject)
-        local ok, result = awaitSafe(first)
+        local awaited = table.pack(awaitSafe(first))
+        local ok
+        ok = awaited[1]
         if ok and resolved then
-          return resolve(resolved(result))
+          return resolve(resolved(select(2, table.unpack(awaited))))
         elseif rejected then
-          return reject(rejected(result))
+          return reject(rejected(select(2, table.unpack(awaited))))
         end
       end)
     end,
@@ -197,9 +244,9 @@ do
     end,
     _returnAwait = function(self)
       if self.value ~= nil then
-        return true, self.value
+        return true, table.unpack(self.value)
       else
-        return false, self.error
+        return false, table.unpack(self.error)
       end
     end,
     awaitSafe = function(self)
@@ -215,11 +262,13 @@ do
       end
     end,
     await = function(self)
-      local ok, result = self:awaitSafe()
+      local awaited = table.pack(self:awaitSafe())
+      local ok
+      ok = awaited[1]
       if not ok then
-        error(result)
+        throw(select(2, table.unpack(awaited)))
       end
-      return result
+      return select(2, table.unpack(awaited))
     end
   }
   _base_0.__index = _base_0
@@ -250,17 +299,17 @@ do
   })
   _base_0.__class = _class_0
   local self = _class_0
-  self.resolved = function(value)
+  self.resolved = function(...)
     do
       local _with_0 = miku()
-      _with_0:_resolve(value)
+      _with_0:_resolve(...)
       return _with_0
     end
   end
-  self.rejected = function(error)
+  self.rejected = function(...)
     do
       local _with_0 = miku()
-      _with_0:_reject(error)
+      _with_0:_reject(...)
       return _with_0
     end
   end
@@ -268,26 +317,101 @@ do
 end
 async = function(fn)
   return function(...)
-    local args = {
-      ...
-    }
+    local args = table.pack(...)
     return miku(function(resolve, reject)
       return resolve(fn(table.unpack(args)))
     end)
   end
 end
-awaitSafe = function(future)
+awaitSafe = function(future, ...)
   if type(future == "table" and future.__class == miku) then
     return future:awaitSafe()
   else
-    return true, future
+    return true, future, ...
   end
 end
-await = function(future)
+await = function(future, ...)
   if type(future == "table" and future.__class == miku) then
     return future:await()
   else
-    return future
+    return future, ...
+  end
+end
+throw = function(...)
+  local err = table.pack(...)
+  err.vararg = true
+  return error(err)
+end
+local Exception
+do
+  local _class_0
+  local _base_0 = {
+    __tostring = function(self)
+      return tostring(self.__class.__name) .. ": " .. tostring(self.message) .. ", " .. tostring(self.traceback)
+    end
+  }
+  _base_0.__index = _base_0
+  _class_0 = setmetatable({
+    __init = function(self, message, level)
+      self.message = message
+      self.traceback = debug.traceback(nil, level or 3)
+    end,
+    __base = _base_0,
+    __name = "Exception"
+  }, {
+    __index = _base_0,
+    __call = function(cls, ...)
+      local _self_0 = setmetatable({}, _base_0)
+      cls.__init(_self_0, ...)
+      return _self_0
+    end
+  })
+  _base_0.__class = _class_0
+  Exception = _class_0
+end
+local exception
+exception = function(name)
+  do
+    local _class_0
+    local _parent_0 = Exception
+    local _base_0 = {
+      __name = name,
+      __tostring = function(self)
+        return tostring(self.__name) .. ": " .. tostring(self.message) .. ", " .. tostring(self.traceback)
+      end
+    }
+    _base_0.__index = _base_0
+    setmetatable(_base_0, _parent_0.__base)
+    _class_0 = setmetatable({
+      __init = function(self, ...)
+        return _class_0.__parent.__init(self, ...)
+      end,
+      __base = _base_0,
+      __name = nil,
+      __parent = _parent_0
+    }, {
+      __index = function(cls, name)
+        local val = rawget(_base_0, name)
+        if val == nil then
+          local parent = rawget(cls, "__parent")
+          if parent then
+            return parent[name]
+          end
+        else
+          return val
+        end
+      end,
+      __call = function(cls, ...)
+        local _self_0 = setmetatable({}, _base_0)
+        cls.__init(_self_0, ...)
+        return _self_0
+      end
+    })
+    _base_0.__class = _class_0
+    if _parent_0.__inherited then
+      _parent_0.__inherited(_parent_0, _class_0)
+    end
+    return _class_0
   end
 end
 return {
@@ -296,6 +420,9 @@ return {
   hatsune = hatsune,
   miku = miku,
   awaitSafe = awaitSafe,
+  throw = throw,
+  exception = exception,
+  Exception = Exception,
   logger = setLogger,
   version = version
 }

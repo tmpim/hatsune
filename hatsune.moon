@@ -1,4 +1,4 @@
-version = "0.0.0"
+version = "0.1.0"
 
 export _HATSUNE_LOOP
 
@@ -8,6 +8,26 @@ log = (msg) ->
 
 setLogger = (fn) ->
   logger = fn
+
+indent = (level, str) ->
+  " "\rep(level) .. str
+
+pretty = (value, level = 0) ->
+  if type(value) == "table"
+    if value.vararg
+      return table.concat [pretty v for v in *value], ", "
+
+    if getmetatable(value) and getmetatable(value).__tostring
+      return "[#{value}]"
+
+    body = table.concat [indent level + 1, "#{pretty k, level + 1}: #{pretty v, level + 1}" for k, v in pairs value], ",\n"
+    return indent(level, "{") .. "\n#{body}\n" .. indent(level, "}")
+  elseif type(value) == "function"
+    return "[#{value}]"
+  elseif type(value) == "string"
+    return "\"#{value}\""
+  else
+    return tostring value
 
 -- cute event loop
 class hatsune
@@ -39,7 +59,7 @@ class hatsune
     if coroutine.status(process.thread) == "suspended"
       _, msg, err = coroutine.resume process.thread, ...
       if msg == "aaaaa"
-        error "#{process.name} died with an unhandled error:\n#{err}"
+        error "#{process.name} died with an unhandled error:\n#{pretty err}"
 
     if coroutine.status(process.thread) == "dead"
       -- cleanup
@@ -61,7 +81,7 @@ class hatsune
 
   interval: (interval, fn, ...) =>
     timer = os.startTimer interval
-    args = {...}
+    args = table.pack ...
     @onNamed "interval #{interval}", "timer", (event, id) ->
       if id == timer
         fn table.unpack args
@@ -69,14 +89,14 @@ class hatsune
 
   timeout: (timeout, fn, ...) =>
     timer = os.startTimer timeout
-    args = {...}
+    args = table.pack ...
     @onNamed "timeout #{timeout}", "timer", (event, id) ->
       if id == timer
         fn table.unpack args
 
   schedule: (name, fn, ...) =>
     thread = coroutine.create (...) ->
-      ok, err = xpcall fn, debug.traceback, ...
+      ok, err = pcall fn, ...
       if not ok
         coroutine.yield "aaaaa", err
     process = { :name, :thread }
@@ -98,7 +118,7 @@ class hatsune
     @shutdown!
     @processes = {}
 
-local await, async, miku, awaitSafe
+local await, async, miku, awaitSafe, throw
 
 -- she's from the future
 class miku
@@ -111,18 +131,21 @@ class miku
     @traceback = debug.traceback(nil, 3)
     @process = _HATSUNE_LOOP\schedule @name, @\_run if @fn
 
-  @resolved: (value) ->
+  @resolved: (...) ->
     with miku!
-      \_resolve value
+      \_resolve ...
 
-  @rejected: (error) ->
+  @rejected: (...) ->
     with miku!
-      \_reject error
+      \_reject ...
 
   _run: =>
     ok, err = pcall @fn, @\_resolve, @\_reject
     if not ok
-      @_reject err
+      if type(err) == "table" and err.vararg
+        @_reject table.unpack err
+      else
+        @_reject err
 
   _fulfill: (value, error) =>
     @value = value
@@ -130,29 +153,32 @@ class miku
     @fulfilled = true
     os.queueEvent "miku", @
 
-  _resolve: (value) =>
+  _resolve: (...) =>
+    value = table.pack ...
     @_fulfill value, nil
 
-  _reject: (error) =>
+  _reject: (...) =>
+    error = table.pack ...
     @_fulfill nil, error
 
   done: (resolved, rejected) =>
     first = @
     miku (resolve, reject) ->
-      ok, result = awaitSafe first
+      awaited = table.pack awaitSafe first
+      { ok } = awaited
       if ok and resolved
-        resolve resolved result
+        resolve resolved select 2, table.unpack awaited
       elseif rejected
-        reject rejected result
+        reject rejected select 2, table.unpack awaited
 
   fail: (rejected) =>
     @done nil, rejected
 
   _returnAwait: =>
     if @value ~= nil
-      return true, @value
+      return true, table.unpack @value
     else
-      return false, @error
+      return false, table.unpack @error
 
   awaitSafe: =>
     if @fulfilled
@@ -164,33 +190,50 @@ class miku
           return @_returnAwait!
 
   await: =>
-    ok, result = @awaitSafe!
+    awaited = table.pack @awaitSafe!
+    { ok } = awaited
     if not ok
-      error result
-    result
+      throw select 2, table.unpack awaited
+    select 2, table.unpack awaited
 
 async = (fn) ->
   (...) ->
-    args = {...}
+    args = table.pack ...
     miku (resolve, reject) ->
       resolve fn table.unpack args
 
-awaitSafe = (future) ->
+awaitSafe = (future, ...) ->
   if type future == "table" and future.__class == miku
     return future\awaitSafe!
   else
-    return true, future
+    return true, future, ...
 
-await = (future) ->
+await = (future, ...) ->
   if type future == "table" and future.__class == miku
     return future\await!
   else
-    return future
+    return future, ...
 
+throw = (...) ->
+  err = table.pack ...
+  err.vararg = true
+  error err
+
+class Exception
+  new: (@message, level) =>
+    @traceback = debug.traceback nil, level or 3
+
+  __tostring: => "#{@@__name}: #{@message}, #{@traceback}"
+
+exception = (name) ->
+  class extends Exception
+    __name: name
+
+    __tostring: => "#{@__name}: #{@message}, #{@traceback}"
 
 {
   :await, :async, :hatsune, :miku,
-  :awaitSafe,
+  :awaitSafe, :throw, :exception, :Exception,
   logger: setLogger,
   :version
 }

@@ -1,16 +1,18 @@
-import miku from require "hatsune"
+import miku, throw, exception from require "hatsune"
 
-version = "0.0.0"
+KagamineException = exception "KagamineException"
+
+version = "0.0.1"
 
 -- http response class
 class kagamine
   used: false
 
-  new: (@url, @status, @statusText, @headers, @body, @err) =>
+  new: (@url, @status, @statusText, @headers, @body, @error) =>
 
   _checkUsed: =>
     if @used
-      error "Response already used"
+      throw KagamineException "Response already used"
 
   read: (...) =>
     @_checkUsed!
@@ -77,4 +79,7 @@ rin = (url, options) ->
           reject wrapResponse url, body, err
           break
 
-{ :kagamine, :rin, :version }
+{
+  :kagamine, :rin, :KagamineException,
+  :version
+}

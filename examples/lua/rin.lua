@@ -15,5 +15,5 @@ end
 
 scheduler:run(function()
   local response = await(rin(url))
-  return prettyPrintResponse(response)
+  prettyPrintResponse(response)
 end)
