@@ -118,7 +118,7 @@ class hatsune
     @shutdown!
     @processes = {}
 
-local await, async, miku, awaitSafe, throw
+local await, async, miku, awaitSafe, throw, Exception
 
 -- she's from the future
 class miku
@@ -139,13 +139,14 @@ class miku
     with miku!
       \_reject ...
 
+  _handleError: (err) =>
+    if type(err) == "table" and err.vararg
+      @_reject table.unpack err
+    else
+      @_reject Exception err, 5
+
   _run: =>
-    ok, err = pcall @fn, @\_resolve, @\_reject
-    if not ok
-      if type(err) == "table" and err.vararg
-        @_reject table.unpack err
-      else
-        @_reject err
+    xpcall @fn, @\_handleError, @\_resolve, @\_reject
 
   _fulfill: (value, error) =>
     @value = value

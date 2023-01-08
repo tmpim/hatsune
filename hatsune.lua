@@ -183,15 +183,28 @@ do
   _base_0.__class = _class_0
   hatsune = _class_0
 end
-local await, async, miku, awaitSafe, throw
+local await, async, miku, awaitSafe, throw, Exception
 do
   local _class_0
   local _base_0 = {
     value = nil,
     error = nil,
     fulfilled = false,
+    _handleError = function(self, err)
+      if type(err) == "table" and err.vararg then
+        return self:_reject(table.unpack(err))
+      else
+        return self:_reject(Exception(err, 5))
+      end
+    end,
     _run = function(self)
-      local ok, err = pcall(self.fn, (function()
+      return xpcall(self.fn, (function()
+        local _base_1 = self
+        local _fn_0 = _base_1._handleError
+        return function(...)
+          return _fn_0(_base_1, ...)
+        end
+      end)(), (function()
         local _base_1 = self
         local _fn_0 = _base_1._resolve
         return function(...)
@@ -204,13 +217,6 @@ do
           return _fn_0(_base_1, ...)
         end
       end)())
-      if not ok then
-        if type(err) == "table" and err.vararg then
-          return self:_reject(table.unpack(err))
-        else
-          return self:_reject(err)
-        end
-      end
     end,
     _fulfill = function(self, value, error)
       self.value = value
@@ -342,7 +348,6 @@ throw = function(...)
   err.vararg = true
   return error(err)
 end
-local Exception
 do
   local _class_0
   local _base_0 = {

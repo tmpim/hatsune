@@ -8,6 +8,9 @@ MyException = exception "MyException"
 otherReject = async ->
   throw MyException "hello, this is a custom exception!"
 
+brokenPromise = async ->
+  callSomeFunctionThatDoesNotExist!
+
 scheduler = hatsune!
 
 scheduler\run ->
@@ -15,3 +18,6 @@ scheduler\run ->
 
   ok, err = awaitSafe otherReject!
   print "err is #{err.__name}"
+
+  ok, err = awaitSafe brokenPromise!
+  print err
