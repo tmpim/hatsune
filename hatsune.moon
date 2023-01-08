@@ -142,8 +142,10 @@ class miku
   _handleError: (err) =>
     if type(err) == "table" and err.vararg
       @_reject table.unpack err
-    else
+    elseif type(err) == "string"
       @_reject Exception err, 5
+    else
+      @_reject err
 
   _run: =>
     xpcall @fn, @\_handleError, @\_resolve, @\_reject

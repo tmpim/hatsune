@@ -193,8 +193,10 @@ do
     _handleError = function(self, err)
       if type(err) == "table" and err.vararg then
         return self:_reject(table.unpack(err))
-      else
+      elseif type(err) == "string" then
         return self:_reject(Exception(err, 5))
+      else
+        return self:_reject(err)
       end
     end,
     _run = function(self)
