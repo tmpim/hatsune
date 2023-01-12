@@ -200,21 +200,23 @@ do
       end
     end,
     _run = function(self)
-      return xpcall(self.fn, (function()
+      return xpcall((function()
+        return self.fn((function()
+          local _base_1 = self
+          local _fn_0 = _base_1._resolve
+          return function(...)
+            return _fn_0(_base_1, ...)
+          end
+        end)(), (function()
+          local _base_1 = self
+          local _fn_0 = _base_1._reject
+          return function(...)
+            return _fn_0(_base_1, ...)
+          end
+        end)())
+      end), (function()
         local _base_1 = self
         local _fn_0 = _base_1._handleError
-        return function(...)
-          return _fn_0(_base_1, ...)
-        end
-      end)(), (function()
-        local _base_1 = self
-        local _fn_0 = _base_1._resolve
-        return function(...)
-          return _fn_0(_base_1, ...)
-        end
-      end)(), (function()
-        local _base_1 = self
-        local _fn_0 = _base_1._reject
         return function(...)
           return _fn_0(_base_1, ...)
         end

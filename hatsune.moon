@@ -148,7 +148,7 @@ class miku
       @_reject err
 
   _run: =>
-    xpcall @fn, @\_handleError, @\_resolve, @\_reject
+    xpcall (-> @.fn @\_resolve, @\_reject), @\_handleError
 
   _fulfill: (value, error) =>
     @value = value
