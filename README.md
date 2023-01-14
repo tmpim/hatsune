@@ -12,7 +12,8 @@ computercraft i/o library for people who like vocaloid
   - `awaitSafe` - await a miku, catching errors and returning `boolean, result`, also available as `miku:awaitSafe`
 
 hatsune also provides a few optional modules:
-  - `rin` - async http library
+  - `rin` - async http
+  - `rana` - generator functions
 
 ## examples
 
@@ -23,6 +24,7 @@ the preferable language for hatsune is moonscript, since it allows for much more
   - [hatsune](./examples/moonscript/hatsune.moon)
   - [miku](./examples/moonscript/miku.moon)
   - [rin](./examples/moonscript/rin.moon)
+  - [rana](./examples/moonscript/rana.moon)
 
 ### [lua](./examples/lua)
 
@@ -38,6 +40,9 @@ from computercraft, run the following command:
 
 ```
 wget https://github.com/tmpim/hatsune/raw/main/hatsune.lua
+
+# additionally, if you want a few optional modules (for example rin):
+wget https://github.com/tmpim/hatsune/raw/main/modules/rin.lua
 ```
 
 ## building
