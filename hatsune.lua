@@ -118,7 +118,9 @@ do
       local args = table.pack(...)
       return self:onNamed("interval " .. tostring(interval), "timer", function(event, id)
         if id == timer then
-          fn(table.unpack(args))
+          self:schedule("spawned interval " .. tostring(interval), function()
+            return fn(table.unpack(args))
+          end)
           timer = os.startTimer(interval)
         end
       end)
@@ -144,7 +146,8 @@ do
         thread = thread
       }
       self:execute(process, ...)
-      return table.insert(self.processes, process)
+      table.insert(self.processes, process)
+      return process
     end,
     unschedule = function(self, thread)
       for i, t in pairs(self.processes) do

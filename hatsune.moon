@@ -84,7 +84,7 @@ class hatsune
     args = table.pack ...
     @onNamed "interval #{interval}", "timer", (event, id) ->
       if id == timer
-        fn table.unpack args
+        @schedule "spawned interval #{interval}", -> fn table.unpack args
         timer = os.startTimer interval
 
   timeout: (timeout, fn, ...) =>
@@ -102,6 +102,7 @@ class hatsune
     process = { :name, :thread }
     @execute process, ...
     table.insert @processes, process
+    process
 
   unschedule: (thread) =>
     for i, t in pairs @processes
