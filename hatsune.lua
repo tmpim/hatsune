@@ -187,6 +187,7 @@ do
   hatsune = _class_0
 end
 local await, async, miku, awaitSafe, throw, Exception
+local idCounter = 0
 do
   local _class_0
   local _base_0 = {
@@ -268,7 +269,7 @@ do
       else
         while true do
           local event, future = coroutine.yield()
-          if event == "miku" and future == self then
+          if event == "miku" and future.id == self.id then
             return self:_returnAwait()
           end
         end
@@ -288,6 +289,11 @@ do
   _class_0 = setmetatable({
     __init = function(self, fn)
       self.fn = fn
+      self.id = idCounter
+      idCounter = idCounter + 1
+      if idCounter > 1000000000000000 then
+        idCounter = 0
+      end
       self.name = tostring(self):sub(8)
       self.traceback = debug.traceback(nil, 3)
       if self.fn then

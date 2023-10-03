@@ -122,12 +122,18 @@ class hatsune
 local await, async, miku, awaitSafe, throw, Exception
 
 -- she's from the future
+idCounter = 0
 class miku
   value: nil
   error: nil
   fulfilled: false
 
   new: (@fn) =>
+    @id = idCounter
+    idCounter += 1
+    if idCounter > 1000000000000000
+      idCounter = 0 -- Hope you don't have 1 quadrillion promises running at once :)
+
     @name = tostring(@)\sub 8
     @traceback = debug.traceback(nil, 3)
     @process = _HATSUNE_LOOP\schedule @name, @\_run if @fn
@@ -190,7 +196,7 @@ class miku
     else
       while true
         event, future = coroutine.yield!
-        if event == "miku" and future == @
+        if event == "miku" and future.id == @id
           return @_returnAwait!
 
   await: =>
